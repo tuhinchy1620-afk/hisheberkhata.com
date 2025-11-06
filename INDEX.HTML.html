@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আমার দৈনিক হিসেব সফটওয়্যার</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 30px; text-align: center; }
+        .login-section { padding: 40px; text-align: center; background: #f8f9fa; }
+        .main-section { display: none; padding: 20px; }
+        input, select, button { padding: 12px 15px; margin: 8px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; width: 200px; }
+        button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; cursor: pointer; transition: all 0.3s ease; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .form-section { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #34495e; color: white; }
+        .delete-btn { background: #e74c3c; padding: 8px 15px; font-size: 14px; width: auto; }
+        .total-section { background: #2ecc71; color: white; padding: 20px; border-radius: 10px; margin-top: 20px; text-align: center; }
+        .logout-btn { background: #e74c3c; width: auto; float: right; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 আমার দৈনিক হিসেব</h1>
+            <p>যেকোনো জায়গা থেকে আপনার হিসেব লিখুন এবং দেখুন</p>
+        </div>
+        
+        <div class="login-section" id="loginSection">
+            <h2>লগইন করুন</h2>
+            <input type="text" id="username" placeholder="ইউজারনেম" value="admin">
+            <input type="password" id="password" placeholder="পাসওয়ার্ড" value="12345">
+            <br>
+            <button onclick="login()">লগইন</button>
+            <p style="margin-top: 15px; color: #666;">ডিফল্ট ইউজারনেম: admin, পাসওয়ার্ড: 12345</p>
+        </div>
+        
+        <div class="main-section" id="mainSection">
+            <button class="logout-btn" onclick="logout()">লগআউট</button>
+            
+            <div class="form-section">
+                <h2>নতুন এন্ট্রি যোগ করুন</h2>
+                <input type="date" id="entryDate">
+                <input type="text" id="description" placeholder="বিবরণ">
+                <input type="number" id="income" placeholder="আয়ের পরিমাণ">
+                <input type="number" id="expense" placeholder="ব্যয়ের পরিমাণ">
+                <button onclick="addEntry()">এন্ট্রি যোগ করুন</button>
+            </div>
+            
+            <div class="entries-section">
+                <h2>আপনার সকল এন্ট্রি</h2>
+                <div id="entriesList"></div>
+                <div class="total-section" id="totalSection"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_USERNAME = "admin";
+        const DEFAULT_PASSWORD = "12345";
+        
+        function getEntries() {
+            const entries = localStorage.getItem('dailyEntries');
+            return entries ? JSON.parse(entries) : [];
+        }
+        
+        function saveEntries(entries) {
+            localStorage.setItem('dailyEntries', JSON.stringify(entries));
+        }
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === DEFAULT_USERNAME && password === DEFAULT_PASSWORD) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('mainSection').style.display = 'block';
+                loadEntries();
+            } else {
+                alert('ভুল ইউজারনেম বা পাসওয়ার্ড!');
+            }
+        }
+        
+        function logout() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainSection').style.display = 'none';
+        }
+        
+        function addEntry() {
+            const date = document.getElementById('entryDate').value;
+            const description = document.getElementById('description').value;
+            const income = parseFloat(document.getElementById('income').value) || 0;
+            const expense = parseFloat(document.getElementById('expense').value) || 0;
+            
+            if (!date || !description) {
+                alert('তারিখ এবং বিবরণ পূরণ করুন');
+                return;
+            }
+            
+            const entries = getEntries();
+            const newEntry = {
+                id: Date.now(),
+                date: date,
+                description: description,
+                income: income,
+                expense: expense
+            };
+            
+            entries.push(newEntry);
+            saveEntries(entries);
+            loadEntries();
+            
+            document.getElementById('entryDate').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('income').value = '';
+            document.getElementById('expense').value = '';
+        }
+        
+        function deleteEntry(id) {
+            if (confirm('আপনি কি এই এন্ট্রি ডিলিট করতে চান?')) {
+                const entries = getEntries();
+                const filteredEntries = entries.filter(entry => entry.id !== id);
+                saveEntries(filteredEntries);
+                loadEntries();
+            }
+        }
+        
+        function loadEntries() {
+            const entries = getEntries();
+            const entriesList = document.getElementById('entriesList');
+            const totalSection = document.getElementById('totalSection');
+            
+            if (entries.length === 0) {
+                entriesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">কোনো এন্ট্রি নেই। নতুন এন্ট্রি যোগ করুন।</p>';
+                totalSection.innerHTML = '';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>তারিখ</th>
+                            <th>বিবরণ</th>
+                            <th>আয়</th>
+                            <th>ব্যয়</th>
+                            <th>কাজ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            let totalIncome = 0;
+            let totalExpense = 0;
+            
+            entries.forEach(entry => {
+                totalIncome += entry.income;
+                totalExpense += entry.expense;
+                
+                tableHTML += `
+                    <tr>
+                        <td>${entry.date}</td>
+                        <td>${entry.description}</td>
+                        <td style="color: green;">${entry.income.toLocaleString()}৳</td>
+                        <td style="color: red;">${entry.expense.toLocaleString()}৳</td>
+                        <td><button class="delete-btn" onclick="deleteEntry(${entry.id})">ডিলিট</button></td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            entriesList.innerHTML = tableHTML;
+            
+            const balance = totalIncome - totalExpense;
+            totalSection.innerHTML = `
+                <h3>সর্বমোট সারাংশ</h3>
+                <p>মোট আয়: <strong>${totalIncome.toLocaleString()}৳</strong></p>
+                <p>মোট ব্যয়: <strong>${totalExpense.toLocaleString()}৳</strong></p>
+                <p>বর্তমান ব্যালেন্স: <strong style="color: ${balance >= 0 ? '#2ecc71' : '#e74c3c'}">${balance.toLocaleString()}৳</strong></p>
+            `;
+        }
+        
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entryDate').value = today;
+        };
+    </script>
+</body>
+</html>
